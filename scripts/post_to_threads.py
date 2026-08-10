@@ -42,8 +42,6 @@ KST = timezone(timedelta(hours=9))
 
 def get_gspread_client():
     encoded = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
-    # Secret 붙여넣기 과정에서 섞여 들어갈 수 있는 공백/개행 제거
-    encoded = "".join(encoded.split())
     key_dict = json.loads(base64.b64decode(encoded))
     creds = Credentials.from_service_account_info(key_dict, scopes=SCOPES)
     return gspread.authorize(creds)
@@ -96,4 +94,53 @@ def main():
     print(f"[디버그] 시트 헤더: {ws.row_values(1)}")
 
     records = ws.get_all_records()  # 1행을 헤더로 사용해 dict 리스트로 반환
-    print(f"[디버그]
+    print(f"[디버그] 전체 행 수: {len(records)}")
+
+    target_row_index = None  # 실제 시트 행 번호 (헤더 포함, 1-base)
+    target_record = None
+
+    for i, row in enumerate(records):
+        status = str(row.get("상태", "")).strip()
+        if status != STATUS_DONE:
+            target_row_index = i + 2  # 헤더(1행) + 0-base 보정
+            target_record = row
+            break
+
+    if target_record is None:
+        print(f"[완료] 발행할 글이 더 없습니다. 전체 {len(records)}개 모두 발행완료 상태입니다.")
+        sys.exit(0)
+
+    text = str(target_record.get("복붙용 전체 텍스트", "")).strip()
+    post_num = target_record.get("번호", "?")
+
+    if not text:
+        print(f"[오류] {post_num}번 행의 '복붙용 전체 텍스트' 열이 비어 있습니다. 시트를 확인하세요.")
+        sys.exit(1)
+
+    print(f"[진행] {post_num}번 글 발행 시도 (시트 행 {target_row_index})")
+    print(f"--- 본문 미리보기 ---\n{text[:80]}...\n---------------------")
+
+    try:
+        creation_id = create_text_container(user_id, access_token, text)
+        time.sleep(5)  # Threads API 컨테이너 처리 대기
+        result = publish_container(user_id, access_token, creation_id)
+        print(f"[성공] {post_num}번 글 발행 완료. 응답: {result}")
+    except Exception as e:
+        print(f"[실패] {post_num}번 글 발행 중 오류 발생: {e}")
+        sys.exit(1)
+
+    # 헤더 순서 기준으로 열 번호 계산
+    headers = ws.row_values(1)
+    status_col = headers.index("상태") + 1
+    ws.update_cell(target_row_index, status_col, STATUS_DONE)
+
+    if "발행일시" in headers:
+        ts_col = headers.index("발행일시") + 1
+        now_kst = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
+        ws.update_cell(target_row_index, ts_col, now_kst)
+
+    print(f"[시트 갱신] {target_row_index}행 상태 -> {STATUS_DONE}")
+
+
+if __name__ == "__main__":
+    main()
