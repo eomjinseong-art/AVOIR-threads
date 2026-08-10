@@ -42,6 +42,8 @@ KST = timezone(timedelta(hours=9))
 
 def get_gspread_client():
     encoded = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
+    # Secret 붙여넣기 과정에서 섞여 들어갈 수 있는 공백/개행 제거
+    encoded = "".join(encoded.split())
     key_dict = json.loads(base64.b64decode(encoded))
     creds = Credentials.from_service_account_info(key_dict, scopes=SCOPES)
     return gspread.authorize(creds)
