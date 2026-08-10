@@ -76,9 +76,10 @@ def publish_container(user_id: str, access_token: str, creation_id: str) -> dict
 
 
 def main():
-    access_token = os.environ.get("THREADS_ACCESS_TOKEN")
-    user_id = os.environ.get("THREADS_USER_ID")
-    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    access_token = (os.environ.get("THREADS_ACCESS_TOKEN") or "").strip()
+    user_id = (os.environ.get("THREADS_USER_ID") or "").strip()
+    sheet_id = (os.environ.get("GOOGLE_SHEET_ID") or "").strip()
+    print(f"[디버그] user_id 길이: {len(user_id)}, 앞 4자리: {user_id[:4] if user_id else '(비어있음)'}")
 
     if not all([access_token, user_id, sheet_id, os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")]):
         print("[오류] 필수 환경변수(THREADS_ACCESS_TOKEN / THREADS_USER_ID / "
