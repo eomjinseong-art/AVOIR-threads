@@ -1,0 +1,44 @@
+name: Threads 토큰 점검·자동 연장
+
+# 매주 월요일 KST 10:23. 토큰이 살아 있으면 60일 연장 후 시크릿 갱신(GH_PAT 필요),
+# 죽어 있으면 이슈 1개로 알림. 매주 돌면서 만료 걱정을 없앤다.
+on:
+  schedule:
+    - cron: "23 1 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: threads-autopost
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: 토큰 점검·연장
+        env:
+          THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/refresh_token.py
+
+      - name: 연장 기록 커밋
+        if: always()
+        run: |
+          git add content/token.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "변경 없음"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: 토큰 연장 기록 [skip ci]"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
