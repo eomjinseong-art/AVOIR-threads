@@ -2,6 +2,8 @@
 
 @avoireditor 스레드 계정에 **하루 2번(오전 출근길 · 저녁 퇴근 후, KST)** 글을 자동으로 올리는 GitHub Actions 봇.
 
+> ⚠️ 새 워크플로 2개는 `ci/workflows/` 에 있습니다. `.github/workflows/` 로 옮겨야 이슈 알림·기록 커밋·주간 토큰 연장이 켜집니다 (`ci/workflows/README.md`).
+
 ## 동작
 | 항목 | 내용 |
 |---|---|
