@@ -1,6 +1,6 @@
 # AVOIR Threads 자동 발행
 
-@avoireditor 스레드 계정에 **하루 2번(오전 출근길 · 저녁 퇴근 후, KST)** 글을 자동으로 올리는 GitHub Actions 봇.
+@avoireditor 스레드 계정에 **하루 2번(오전 · 저녁, KST)** 글을 자동으로 올리는 GitHub Actions 봇.
 
 > 워크플로 2개(`Threads 자동 발행`, `Threads 토큰 점검·자동 연장`)는 `.github/workflows/` 에서 동작합니다. 배경은 `ci/workflows/README.md`.
 
@@ -18,10 +18,10 @@
 ## 글 추가/수정
 `content/queue.json` 에 항목을 추가하면 끝. 이미 나간 글은 `state.json`에 ID로 기록되므로 순서를 바꾸거나 중간에 끼워 넣어도 됨(ID만 겹치지 않게).
 ```json
-{"id": "A070", "category": "출근룩", "text": "본문 (500자 이내)", "link": "https://www.avoir24.com/44"}
+{"id": "B071", "category": "데이트룩", "text": "본문 (500자 이내)", "link": "https://www.avoir24.com"}
 ```
-- `link` 는 선택. 넣으면 링크 미리보기 카드가 붙는다. 링크 글은 6~10개 중 1개 정도로.
-- 스타일: 상황 한 줄 훅 → 짧은 디테일 2~4줄 → `A 👈 / 👉 B` 투표 또는 번호 질문으로 댓글 유도.
+- `link` 는 선택. 넣으면 링크 미리보기 카드가 붙는다. 링크 글은 10~15개 중 1개 정도로.
+- 톤·형식: **따뜻한 언니 스타일리스트가 오늘의 옷을 골라 주는 글** — 자세한 기준은 [`docs/CONTENT_GUIDE.md`](docs/CONTENT_GUIDE.md).
 
 ## 시크릿
 | 이름 | 용도 |
