@@ -1,69 +1,45 @@
-# 출근룩 200 스레드 자동포스팅 (구글시트 연동판)
+# AVOIR Threads 자동 발행
 
-매일 3회(오전 8시 / 오후 1시 / 밤 10시, KST) 구글시트에서 다음 미발행 글을 읽어와
-스레드(Threads)에 자동 발행하는 GitHub Actions 봇. 콘텐츠 수정은 시트에서 바로 하면 됨 — 재배포 불필요.
+@avoireditor 스레드 계정에 **하루 2번(오전 출근길 · 저녁 퇴근 후, KST)** 글을 자동으로 올리는 GitHub Actions 봇.
 
-## 시트 컬럼 규격 (1행 = 헤더, 이 이름 그대로 써야 함)
+> ⚠️ 새 워크플로 2개는 `ci/workflows/` 에 있습니다. `.github/workflows/` 로 옮겨야 이슈 알림·기록 커밋·주간 토큰 연장이 켜집니다 (`ci/workflows/README.md`).
 
-| A: 번호 | B: 본문(원본 줄바꿈) | C: 복붙용 전체 텍스트 | D: 상태 | E: 발행일시 |
-|---|---|---|---|---|
-| 1 | 옷은 많은데... | 1.\n\n옷은 많은데... | 미발행 | (자동 기록) |
+## 동작
+| 항목 | 내용 |
+|---|---|
+| 발행 시간 | 오전 슬롯 07:47~(KST), 저녁 슬롯 20:47~(KST). 크론 지연에 대비해 슬롯마다 여러 번 깨우고 **슬롯당 1개만** 올림 |
+| 글 순서 | ① `content/queue.json` 위에서부터 → ② 큐가 비면 기존 구글시트 `출근룩_200_스레드용`의 '미발행' 행 |
+| 기록 | `content/state.json` (글 ID, 발행 시각, 링크). 워크플로가 자동 커밋 → 저장소가 '비활성'으로 꺼지는 것도 방지 |
+| 실패 알림 | 라벨 `autopost-alert` GitHub 이슈 **1개만** 생성(이미 열려 있으면 조용히 넘어감). 정상 발행되면 자동으로 닫힘 |
+| 토큰 죽음 | `/me` 확인 실패 시 아무것도 올리지 않고 이슈만 남김 → 토큰 교체 후 다음 슬롯에 자동 재개 |
+| 토큰 연장 | `Threads 토큰 점검·연장` 워크플로가 매주 월요일 토큰을 60일 연장하고 시크릿을 갱신 (`GH_PAT` 필요) |
+| 큐 부족 | 남은 글이 10개 이하가 되면 이슈로 알림 |
 
-- 실제로 발행되는 건 **C열**(복붙용 전체 텍스트)
-- **D열이 "미발행"인 첫 행**을 위에서부터 찾아 발행 → 순서 바꾸거나 행 추가/삭제해도 안전
-- 발행 성공 시 D열 → "발행완료", E열 → 발행 시각 자동 기록
-- E열이 없으면 시각 기록은 건너뛰고 D열만 갱신됨 (없어도 동작엔 문제 없음)
-
-## ⚠️ 시작 전 필수 선행 작업
-
-### 1. 스레드 계정 → 프로페셔널 전환 + 토큰 재발급
-(이전과 동일) 스레드 앱에서 프로페셔널 계정 전환 → Meta 앱에서 Threads User ID와
-`threads_content_publish` 권한 포함된 장기 액세스 토큰(60일) 재발급.
-
-### 2. 구글 서비스 계정 생성 (구글시트 접근용)
-1. [Google Cloud Console](https://console.cloud.google.com) → 새 프로젝트 생성(또는 기존 프로젝트 사용)
-2. **API 및 서비스 → 라이브러리** → "Google Sheets API" 검색 → 사용 설정
-3. **API 및 서비스 → 사용자 인증 정보 → 사용자 인증 정보 만들기 → 서비스 계정**
-4. 서비스 계정 생성 후 **키(Keys) 탭 → 키 추가 → JSON** → 다운로드 (예: `service-account.json`)
-5. JSON 파일 안의 `client_email` 값(예: `xxx@xxx.iam.gserviceaccount.com`) 확인
-
-### 3. 시트를 서비스 계정과 공유
-- 구글시트 우측 상단 **공유** 버튼 → 위에서 확인한 `client_email` 주소를 **편집자**로 추가
-  (이 단계를 빼먹으면 "403 Permission denied" 에러가 남)
-
-### 4. GitHub Secrets 등록
-| Secret 이름 | 값 | 구하는 법 |
-|---|---|---|
-| `THREADS_ACCESS_TOKEN` | 장기 액세스 토큰 | 1번 단계 |
-| `THREADS_USER_ID` | Threads User ID | 1번 단계 |
-| `GOOGLE_SHEET_ID` | 시트 ID | 시트 URL `.../d/{여기}/edit` 부분 |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON을 base64로 인코딩한 문자열 | 아래 명령어 |
-
-터미널(맥/리눅스)에서:
-```bash
-base64 -i service-account.json | tr -d '\n'
+## 글 추가/수정
+`content/queue.json` 에 항목을 추가하면 끝. 이미 나간 글은 `state.json`에 ID로 기록되므로 순서를 바꾸거나 중간에 끼워 넣어도 됨(ID만 겹치지 않게).
+```json
+{"id": "A070", "category": "출근룩", "text": "본문 (500자 이내)", "link": "https://www.avoir24.com/44"}
 ```
-Windows(PowerShell)에서:
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("service-account.json"))
-```
-출력된 긴 문자열을 그대로 `GOOGLE_SERVICE_ACCOUNT_JSON` Secret 값으로 등록.
+- `link` 는 선택. 넣으면 링크 미리보기 카드가 붙는다. 링크 글은 6~10개 중 1개 정도로.
+- 스타일: 상황 한 줄 훅 → 짧은 디테일 2~4줄 → `A 👈 / 👉 B` 투표 또는 번호 질문으로 댓글 유도.
 
-## 폴더 구조
+## 시크릿
+| 이름 | 용도 |
+|---|---|
+| `THREADS_ACCESS_TOKEN` | **필수.** @avoireditor 계정 Threads 장기 액세스 토큰(60일, `threads_basic`, `threads_content_publish`) |
+| `GH_PAT` | 선택(권장). 토큰 자동 연장 후 시크릿을 다시 써 넣는 용도. Fine-grained PAT, 이 저장소만, **Secrets: Read and write** |
+| `GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_SHEET_ID` | 선택. 큐가 비었을 때 기존 구글시트 폴백 |
+| `THREADS_USER_ID` | 더 이상 사용 안 함 (토큰으로 `/me` 조회) |
 
-```
-scripts/post_to_threads.py   발행 스크립트 (구글시트 읽기/쓰기 + Threads API 호출)
-scripts/requirements.txt     의존성 (gspread, google-auth)
-.github/workflows/post-threads.yml   스케줄러 (크론 3개, 상태는 시트에 직접 기록)
-```
+## 토큰 재발급 (만료됐을 때)
+1. https://developers.facebook.com/apps → 사용 중인 Threads 앱 → **Use cases → Access the Threads API → Settings/Roles** 에서 @avoireditor 가 Threads 테스터로 등록돼 있는지 확인
+2. **Graph API Explorer**(https://developers.facebook.com/tools/explorer) 우측 상단을 `threads.net` 으로 바꾸고 앱 선택 → **Generate Threads Access Token** → @avoireditor 로 로그인·허용 (단기 토큰, 1시간)
+3. 장기 토큰으로 교환 (앱 시크릿 필요):
+   `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=<앱시크릿>&access_token=<단기토큰>`
+   → 응답의 `access_token` (60일)
+4. 저장소 **Settings → Secrets and variables → Actions → `THREADS_ACCESS_TOKEN` → Update** 에 붙여넣기
+5. Actions → **Threads 자동 발행 → Run workflow (mode = check)** 로 확인. 이후 예약 시간에 자동 재개
 
-json 상태 파일이 없어졌으므로 워크플로에서 git commit/push 권한도 더 이상 필요 없음.
-
-## 테스트 방법
-Actions 탭 → **Threads 자동 발행 → Run workflow** 수동 실행 →
-1번 행(상태=미발행)이 정상 발행되고 시트 D열이 "발행완료"로 바뀌는지 확인.
-
-## 주의할 점
-- 시트에서 D열을 손으로 "발행완료"→"미발행"으로 되돌리면 그 글이 재발행됨 (재발행 원할 때 활용 가능)
-- 60일마다 Threads 토큰 갱신 필요 (동일)
-- 서비스 계정 JSON은 절대 코드에 커밋하지 말 것 — 반드시 Secrets로만 관리
+## 수동 실행
+- `mode=check`: 토큰만 확인(발행 안 함)
+- `mode=post`: 슬롯과 상관없이 다음 글 1개 바로 발행 (`dry_run` 켜면 미리보기만)
