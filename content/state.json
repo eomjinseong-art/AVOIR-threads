@@ -24,6 +24,11 @@
    "at": "2026-10-18 09:20",
    "media_id": "18119328793748022",
    "permalink": "https://www.threads.com/@avoireditor/post/DenYf5TGD9w"
+  },
+  "B006": {
+   "at": "2026-10-18 23:51",
+   "media_id": "18639675118050696",
+   "permalink": "https://www.threads.com/@avoireditor/post/Deo8LdYFSh9"
   }
  },
  "slots": {
@@ -31,6 +36,7 @@
   "2026-10-16-pm": "B002",
   "2026-10-17-am": "B003",
   "2026-10-17-pm": "B004",
-  "2026-10-18-am": "B005"
+  "2026-10-18-am": "B005",
+  "2026-10-18-pm": "B006"
  }
 }
