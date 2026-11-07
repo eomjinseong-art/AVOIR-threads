@@ -199,6 +199,11 @@
    "at": "2026-11-07 11:22",
    "media_id": "17973985677152992",
    "permalink": "https://www.threads.com/@avoireditor/post/DfbGV5VgLzI"
+  },
+  "B041": {
+   "at": "2026-11-08 01:59",
+   "media_id": "18003130665000970",
+   "permalink": "https://www.threads.com/@avoireditor/post/DfcquhnmiSi"
   }
  },
  "slots": {
@@ -241,6 +246,7 @@
   "2026-11-04-am": "B037",
   "2026-11-05-am": "B038",
   "2026-11-06-am": "B039",
-  "2026-11-07-am": "B040"
+  "2026-11-07-am": "B040",
+  "2026-11-07-pm": "B041"
  }
 }
